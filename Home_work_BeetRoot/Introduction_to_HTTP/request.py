@@ -89,7 +89,7 @@ def get_weather(city, open_weather_toke):
 
 def main():
     # task 01
-    with open('robots.xtx', '+w') as file:
+    with open('robots.txt', '+w') as file:
         file.write(test)
 
     # task 02
