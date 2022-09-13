@@ -1,8 +1,9 @@
+import json
 import socket
 import threading
 
 
-PORT = 8002
+PORT = 8003
 SERVER = socket.gethostbyname(socket.gethostname())
 print(SERVER)
 
@@ -25,11 +26,16 @@ def handle_client(connection, address):
         if message_length:
             message_length = int(message_length)
             message = connection.recv(message_length).decode(FORMAT)
+            message = json.loads(message)
+            print('My encryption key', message.get('key'))
             if message == DISCONNECT_MESSAGE:
                 connected = False
 
             print(f'[{address}] - {message}')
             connection.send(f'Message received from {address}'.encode(FORMAT))
+        else:
+            print(f'Active Connection {threading.active_count() - 2}')
+            connected = False
 
     connection.close()
 

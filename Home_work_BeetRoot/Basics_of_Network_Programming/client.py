@@ -1,7 +1,7 @@
 import socket
+import json
 
-
-PORT = 8002
+PORT = 8003
 SERVER = '127.0.0.1'
 HEADER = 1024
 FORMAT = 'utf-8'
@@ -13,11 +13,14 @@ client.connect((SERVER, PORT))
 
 
 def send(message):
-    message = message.encode(FORMAT)
-    message_length = len(message)
+    key = message[::-1]
+    message_key_json = json.dumps({'message': message, 'key': key})
+    bytes_ = bytes(message_key_json, 'utf-8')
+    message_length = len(bytes_)
     send_length = str(message_length).encode(FORMAT)
     send_length += b' ' * (HEADER - len(send_length))
     client.send(send_length)
+    message = message_key_json.encode(FORMAT)
     client.send(message)
     print(client.recv(2048).decode(FORMAT))
 
