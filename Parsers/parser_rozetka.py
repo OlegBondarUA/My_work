@@ -83,9 +83,10 @@ class RozetkaScraper:
             'availability': notebook.select('.goods-tile__availability'),
             'rating': notebook.select('.goods-tile__stars svg'),
         }
-        sel_note['old_price'] = ''.join([num for num
-                                         in sel_note['old_price'][0].text.replace('\xa0', '').strip()
-                                         if num and num.isdigit()]) if sel_note['old_price'] else None
+        sel_note['old_price'] = ''.join([
+            num for num in sel_note['old_price'][0].text.replace('\xa0',
+                                                                 '').strip()
+            if num and num.isdigit()]) if sel_note['old_price'] else None
         return sel_note
 
     @staticmethod
