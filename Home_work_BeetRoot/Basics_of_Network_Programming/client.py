@@ -1,7 +1,7 @@
 import socket
 import json
 
-PORT = 8003
+PORT = 8000
 SERVER = '127.0.0.1'
 HEADER = 1024
 FORMAT = 'utf-8'

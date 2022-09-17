@@ -1,82 +1,30 @@
-import concurrent
-import multiprocessing
-import json
-from requests import get
+import asyncio
+import socket
+from asyncio import AbstractEventLoop
 
 
-def create_list_subreddits(url):
-    data = get(url).json()
-    list_subreddits = []
-    for i in data['data']:
-        list_subreddits.append((i['subreddit'], ))
-    print(' 1 function')
-    return list_subreddits
+async def echo(connection: socket,
+               loop: AbstractEventLoop) -> None:
+    while data := await loop.sock_recv(connection, 1024):
+        await loop.sock_sendall(connection, data)
 
 
-def create_subreddit_request(subreddit):
-    subreddit_request = {}
-    request = f'https://api.pushshift.io/reddit/comment/' \
-              f'search?subreddit={subreddit[0]}'
-    subreddit_request[subreddit] = request
-    print('2 function')
-    return subreddit_request
+async def listen_for_connection(server_socket: socket,
+                                loop: AbstractEventLoop):
+    while True:
+        connection, address = await loop.sock_accept(server_socket)
+        connection.setblocking(False)
+        print(f"Got a connection from {address}")
+        asyncio.create_task(echo(connection, loop))
 
 
-def collect(subreddit_request):
-    subreddit_response = {}
-    for key, value in subreddit_request.items():
-        subreddit_response[key[0]] = get(value).json()
-    print('3 function')
-    return subreddit_response
+async def main():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = ('localhost', 8000)
+    server_socket.setblocking(False)
+    server_socket.bind(server_address)
+    server_socket.listen()
+    await listen_for_connection(server_socket, asyncio.get_event_loop())
 
 
-def create_result(subreddit_response):
-    comments_by_subreddit = {}
-    for subreddit, response in subreddit_response.items():
-        comment_by_author = {}
-        for post in response['data']:
-            author = post.get('author')
-            comment = post.get('body')
-            if author in comment_by_author.keys():
-                comment_by_author[author].append(comment)
-            else:
-                comment_by_author[author] = [comment]
-        comments_by_subreddit[subreddit] = comment_by_author
-    print('4 function')
-    return comments_by_subreddit
-
-
-def process(subreddit):
-    subreddit_request = create_subreddit_request(subreddit)
-    subreddit_response = collect(subreddit_request)
-    comments_by_subreddit = create_result(subreddit_response)
-    print('5 function')
-    return comments_by_subreddit
-
-
-def main():
-
-    url = 'https://api.pushshift.io/reddit/comment/search'
-
-    list_subreddits = create_list_subreddits(url)
-
-    # with multiprocessing.Pool() as pool:
-    #     result = pool.map(process, list_subreddits)
-    #     print(result)
-
-    # with concurrent.futures.ProcessPoolExecutor() as executor:
-    #     result = executor.submit(process, list_subreddits)
-    #     for i in result:
-    #         print(i)
-
-    processes = []
-    for i in list_subreddits:
-        p = multiprocessing.Process(target=process, args=i)
-        processes.append(p)
-        p.start()
-        p.join()
-    print(list(processes))
-
-
-if __name__ == '__main__':
-    main()
+asyncio.run(main())
