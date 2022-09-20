@@ -1,42 +1,62 @@
 import asyncio
 import json
-import aiohttp
-import ssl
-import certifi
-import requests
+import httpx
 
 from time import time
+from requests import get
 
 
-async def create_list_comment(url, session):
-    async with session.get(url, allow_redirects=True):
-        response = requests.get(url).json()
-        data = []
-        for i in response['data']:
-            comments = {
-                'author': i['author'],
-                'comment': i['body'],
-                'subreddit': i['subreddit'],
-                'created_utc': i['created_utc']
-            }
-            data.append(comments)
+def create_list_subreddits(url):
+    data = get(url).json()
+    list_subreddits = []
+    for i in data['data']:
+        list_subreddits.append(i['subreddit'])
+    return list_subreddits
 
-        with open('comments.json', 'a') as file:
-            json.dump(data, file, indent=4)
+
+def create_subreddit_request(list_subreddits):
+    list_subreddits_url = []
+    for subreddit in list_subreddits:
+        request = f'https://api.pushshift.io/reddit/comment/' \
+                  f'search?subreddit={subreddit}'
+        list_subreddits_url.append(request)
+    return list_subreddits_url
+
+
+async def create_result(url):
+    list_comments = []
+    try:
+        async with httpx.AsyncClient() as session:
+            data = await session.get(url)
+            for item in data.json()['data']:
+                comments = {
+                    'author': item['author'],
+                    'comment': item['body'],
+                    'subreddit': item['subreddit'],
+                    'created_utc': item['created_utc']
+                }
+                list_comments.append(comments)
+    except Exception as error:
+        print(error)
+
+    with open('comments.json', 'a') as file:
+        json.dump(list_comments, file, indent=4)
 
 
 async def main():
-    url = 'https://api.pushshift.io/reddit/comment/search/'
+
+    url = 'https://api.pushshift.io/reddit/comment/search'
+
+    list_subreddits = create_list_subreddits(url)
+    urls = create_subreddit_request(list_subreddits)
 
     tasks = []
 
-    ssl_context = ssl.create_default_context(cafile=certifi.where())
-    conn = aiohttp.TCPConnector(ssl=ssl_context)
-
-    async with aiohttp.ClientSession(connector=conn) as session:
-        task = asyncio.create_task(create_list_comment(url, session))
+    for url in urls:
+        task = asyncio.create_task(create_result(url))
         tasks.append(task)
-        await asyncio.gather(*tasks)
+    await asyncio.gather(*tasks)
+
 
 if __name__ == '__main__':
     start = time()

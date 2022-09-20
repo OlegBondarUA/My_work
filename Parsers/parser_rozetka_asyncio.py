@@ -112,8 +112,8 @@ async def main():
 
     queue = asyncio.Queue()
     domain = 'https://rozetka.com.ua/ua/notebooks/c80004/page={page}/'
-    last_page = 20
-    workers = 20
+    last_page = 67
+    workers = 67
 
     for page in range(1, last_page + 1):
         queue.put_nowait(domain.format(page=page))

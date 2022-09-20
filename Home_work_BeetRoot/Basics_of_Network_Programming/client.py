@@ -27,5 +27,3 @@ def send(message):
 
 while (message := input('Введіть повідомлення: ')) != DISCONNECT_MESSAGE:
     send(message)
-
-

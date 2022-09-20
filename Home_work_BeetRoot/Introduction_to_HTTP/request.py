@@ -1,7 +1,10 @@
 import requests
 import datetime
 import json
+
 from pprint import pprint
+from time import time
+from requests import get
 
 
 # task 01
@@ -16,7 +19,7 @@ test = response.text
 
 response = requests.get('https://api.pushshift.io/reddit/comment/search/')
 file = response.json()
-# pprint(file)
+pprint(file)
 
 
 def get_comment(item):
@@ -28,6 +31,41 @@ comment = []
 for i in comments:
     data = {'comment': i}
     comment.append(data)
+###############################################################################
+
+
+def create_list_subreddits(url):
+    data = get(url).json()
+    list_subreddits = []
+    for i in data['data']:
+        list_subreddits.append(i['subreddit'])
+    return list_subreddits
+
+
+def create_subreddit_request(list_subreddits):
+    list_subreddit_request = []
+    for subreddit in list_subreddits:
+        request = f'https://api.pushshift.io/reddit/comment/' \
+                  f'search?subreddit={subreddit}'
+        list_subreddit_request.append(request)
+    return list_subreddit_request
+
+
+def create_result(urls):
+    list_comments = []
+    for url in urls:
+        data = get(url).json()
+        for item in data['data']:
+            comments = {
+                'author': item['author'],
+                'comment': item['body'],
+                'subreddit': item['subreddit'],
+                'created_utc': item['created_utc']
+            }
+            list_comments.append(comments)
+
+    with open('comments.json', 'a') as file:
+        json.dump(list_comments, file, indent=4)
 
 
 ###############################################################################
@@ -97,10 +135,24 @@ def main():
     with open('comment.json', 'w') as file_1:
         json.dump(comment, file_1, indent=4)
 
+    url = 'https://api.pushshift.io/reddit/comment/search'
+
+    list_subreddits = create_list_subreddits(url)
+    urls = create_subreddit_request(list_subreddits)
+    create_result(urls)
+
     # task 03
     city = input('Введіть місто: ')
     get_weather(city, open_weather_token)
 
 
 if __name__ == '__main__':
+    start = time()
+
     main()
+
+    end_time = time()
+    print(f'Getting finished in {end_time - start:.2f} seconds')
+
+
+# file.write(',\n')
